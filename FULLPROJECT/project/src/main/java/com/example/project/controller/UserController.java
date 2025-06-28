@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -20,8 +21,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.project.dto.UpdateUserDTO;
 import com.example.project.dto.userDTO;
 import com.example.project.model.User;
+import com.example.project.repository.UserRepo;
 import com.example.project.security.JwtUtil;
 import com.example.project.service.UserService;
 
@@ -35,6 +38,9 @@ public class UserController {
 	
     @Autowired
     private AuthenticationManager authenticationManager;
+    
+    @Autowired
+    private UserRepo repo;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -72,11 +78,18 @@ public class UserController {
 	        return ResponseEntity.ok(token);
 	    }
 
-	    @PatchMapping("/update")
-	    public ResponseEntity<User> updateUser(@RequestBody userDTO userDTO) {
-	        User updatedUser = userService.updateUser(userDTO);
-	        return ResponseEntity.ok(updatedUser);
+	    @PatchMapping("/edit")
+	    public ResponseEntity<?> updateUser(
+	            @AuthenticationPrincipal UserDetails userDetails,
+	            @RequestBody UpdateUserDTO updatedData) {
+
+	        
+	    	User iser = userService.updateUser(userDetails.getUsername(), updatedData);
+	    	return ResponseEntity.ok(iser);
 	    }
+
+
+
 
 	    @GetMapping("/getUser")
 	    public ResponseEntity<User> getUser(Authentication authentication) {
@@ -90,9 +103,12 @@ public class UserController {
 	        }
 	    }
 
-	    @DeleteMapping("/delete/{username}")
-	    public ResponseEntity<String> deleteUserByUsername(@PathVariable String username) {
+	    @DeleteMapping("/delete")
+	    public ResponseEntity<String> deleteUserByUsername(Authentication auth) {
+	        String username = auth.getName(); // from JWT
+
 	        User user = userService.getUserByUsername(new userDTO(username, null, null));
+
 	        if (user != null) {
 	            userService.deleteUserbyUsername(new userDTO(username, null, null));
 	            return ResponseEntity.ok("User deleted successfully");
@@ -100,6 +116,7 @@ public class UserController {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
 	        }
 	    }
+
 	  
 	
 }

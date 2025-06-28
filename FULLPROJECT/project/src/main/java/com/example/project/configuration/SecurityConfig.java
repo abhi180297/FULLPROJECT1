@@ -45,6 +45,9 @@ public class SecurityConfig {
                 // Allow login and user creation
                 .requestMatchers(HttpMethod.POST, "/users/login", "/users/create").permitAll()
                 .requestMatchers(HttpMethod.GET, "/users/hello").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/users/delete").authenticated()
+
                 // Everything else is protected
                 .anyRequest().authenticated()
             )

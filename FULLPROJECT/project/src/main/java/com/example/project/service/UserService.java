@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.project.dto.UpdateUserDTO;
 import com.example.project.dto.userDTO;
 import com.example.project.model.User;
 import com.example.project.repository.UserRepo;
@@ -28,17 +29,26 @@ public class UserService {
         user1.setEmail(userDTO.getEmail());
         return userRepository.save(user1);
 	}
-	 public User updateUser(userDTO userDTO) {
-	        Optional<User> optionalUser = Optional.ofNullable(userRepository.findByUsername(userDTO.getUsername()));
-	        if (optionalUser.isPresent()) {
-	            User user = optionalUser.get();
-	            user.setEmail(userDTO.getEmail());
-	            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-	            return userRepository.save(user);
-	        } else {
-	            throw new RuntimeException("User not found with username: " + userDTO.getUsername());
-	        }
-	    }
+	public User updateUser(String username, UpdateUserDTO updatedData) {
+	    try {
+	    	User existing = userRepository.findByUsername(username);
+	 	           
+
+	    		    if (updatedData.getEmail() != null && !updatedData.getEmail().isBlank()) {
+	    		        existing.setEmail(updatedData.getEmail());
+	    		    }
+
+	    		    if (updatedData.getPassword() != null && !updatedData.getPassword().isBlank()) {
+	    		        existing.setPassword(passwordEncoder.encode(updatedData.getPassword()));
+	    		    }
+
+	    		    return userRepository.save(existing);
+		} catch (Exception e) {
+			e.getMessage();
+		}
+		return null;
+		
+	}
 
 	    public User getUserByUsername(userDTO userDTO) {
 	        return Optional.ofNullable(userRepository.findByUsername(userDTO.getUsername()))

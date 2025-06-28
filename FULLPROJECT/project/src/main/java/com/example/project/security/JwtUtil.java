@@ -59,4 +59,7 @@ public class JwtUtil {
             return false;
         }		
 	}
+	  public Long extractUserId(String token) {
+	        return Long.parseLong(extractAllClaims(token).get("id").toString());
+	    }
 }
