@@ -78,7 +78,7 @@ public class UserController {
 	        return ResponseEntity.ok(token);
 	    }
 
-	    @PatchMapping("/edit")
+	    @PostMapping("/edit")
 	    public ResponseEntity<?> updateUser(
 	            @AuthenticationPrincipal UserDetails userDetails,
 	            @RequestBody UpdateUserDTO updatedData) {

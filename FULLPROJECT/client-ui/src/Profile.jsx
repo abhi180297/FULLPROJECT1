@@ -59,7 +59,7 @@ function Profile() {
     };
 
     axios
-      .patch("http://localhost:8080/users/edit", payload, {
+      .post("http://localhost:8080/users/edit", payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
