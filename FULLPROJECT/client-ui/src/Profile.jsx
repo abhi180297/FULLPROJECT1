@@ -6,6 +6,8 @@ function Profile() {
   const [user, setUser] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [excelFile, setExcelFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
@@ -103,6 +105,42 @@ function Profile() {
       });
   };
 
+  const handleExcelChange = (e) => {
+    setExcelFile(e.target.files[0]);
+  };
+
+  const handleExcelUpload = async () => {
+    if (!excelFile) {
+      alert("Please select an Excel file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", excelFile);
+    console.log(formData);
+
+    try {
+      
+    const response = await axios
+      .post("http://localhost:8080/users/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      })
+    
+      console.log(token);
+        setUploadStatus(response.data);
+        alert("Excel uploaded successfully");
+
+      navigate("/AssetDetails");
+    } catch (err) {
+        const msg = err.response?.data || err.message;
+        setUploadStatus("Upload failed: " + msg);
+        alert("Upload failed: " + msg);
+    }
+  };
+
   if (!user) return <p>Loading user details...</p>;
 
   return (
@@ -149,10 +187,22 @@ function Profile() {
           <button onClick={handleDelete} style={{ color: "red" }}>
             Delete Account
           </button>
+
+          <hr />
+          <h3>Import Excel Data</h3>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleExcelChange}
+          />
+          <br /><br />
+          <button onClick={handleExcelUpload}>Import File</button>
+          <p style={{ color: uploadStatus.startsWith("Upload failed") ? "red" : "green" }}>
+            {uploadStatus}
+          </p>
         </>
       )}
 
-      <br />
       <br />
       <button onClick={handleLogout}>Logout</button>
     </div>
