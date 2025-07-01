@@ -1,5 +1,9 @@
 package com.example.project.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 
 public class userDTO {
@@ -7,15 +11,6 @@ public class userDTO {
 	  private String username;
 	    private String password;
 		private String email;
-	    public userDTO() {
-			super();
-		}
-		public userDTO(String username, String password, String email) {
-			super();
-			this.username = username;
-			this.password = password;
-			this.email = email;
-		}
 		public String getUsername() {
 			return username;
 		}
@@ -34,5 +29,16 @@ public class userDTO {
 		public void setEmail(String email) {
 			this.email = email;
 		}
+		public userDTO(String username, String password, String email) {
+			super();
+			this.username = username;
+			this.password = password;
+			this.email = email;
+		}
+		public userDTO() {
+			super();
+		}
+	  
+		
 
 }

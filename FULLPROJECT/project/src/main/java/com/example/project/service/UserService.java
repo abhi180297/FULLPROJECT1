@@ -29,6 +29,7 @@ public class UserService {
         user1.setEmail(userDTO.getEmail());
         return userRepository.save(user1);
 	}
+	
 	public User updateUser(String username, UpdateUserDTO updatedData) {
 	    try {
 	    	User existing = userRepository.findByUsername(username);

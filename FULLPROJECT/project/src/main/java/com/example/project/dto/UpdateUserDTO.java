@@ -1,5 +1,11 @@
 package com.example.project.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
 public class UpdateUserDTO {
 	private String email;
 	private String password;
@@ -23,6 +29,6 @@ public class UpdateUserDTO {
 	public UpdateUserDTO() {
 		super();
 	}
-	
+		
 	
 }
