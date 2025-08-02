@@ -3,36 +3,60 @@ import axios from 'axios';
 
 function AssetDetails() {
   const [assets, setAssets] = useState([]);
-  const token = localStorage.getItem("token");
-useEffect(() => {
-  axios
-    .get("http://localhost:8080/users/getAssets", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((res) => {
-      const data = res.data;
+  const [error, setError] = useState(null);
 
-      // Log and validate what type of data you're getting
-      console.log("Fetched asset data:", data);
+  const apiURL = `${process.env.REACT_APP_API_BASE_URL}/XJAAM-0.0.1-SNAPSHOT/getallstudentsitting`;
 
-      // Only set data if it's an array
-      if (Array.isArray(data)) {
-        setAssets(data);
-      } else {
-        console.error("Expected an array, but got:", typeof data);
-        setAssets([]);
+  useEffect(() => {
+    const fetchAssets = async () => {
+     let token = localStorage.getItem("token");
+
+      try {
+        const parsed = JSON.parse(token);
+        if (parsed?.token) token = parsed.token;
+      } catch (e) {
+        
       }
-    })
-    .catch((err) => {
-      console.error("Error fetching assets:", err);
-      setAssets([]);
-    });
-}, [token]);
+
+      if (!token || typeof token !== "string") {
+        console.error("No valid token found.");
+        setError("Missing or invalid token.");
+        return;
+      }
+
+      console.log("API URL:", apiURL);
+      console.log("Token used:", token);
+
+      try {
+        console.log("Final Authorization header:", `Bearer ${token}`);
+        //debugger
+        const res = await axios.get(apiURL, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        console.log("Fetched data:", res.data);
+        if (Array.isArray(res.data)) {
+          setAssets(res.data);
+        } else {
+          setError("Unexpected response format");
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError(err?.response?.data?.error || "Internal Server Error");
+      }
+    };
+
+    fetchAssets();
+  }, [apiURL]); //  token in dependency array
 
   return (
     <div style={{ padding: "1rem" }}>
-      <h2>Asset Details</h2>
-      
+      <h1>Asset Details</h1>
+      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+
       {assets.length > 0 ? (
         <table border="1" cellPadding="8" cellSpacing="0">
           <thead>
@@ -53,7 +77,7 @@ useEffect(() => {
           </tbody>
         </table>
       ) : (
-        <p>No assets found.</p>
+        !error && <p>Loading...</p>
       )}
     </div>
   );

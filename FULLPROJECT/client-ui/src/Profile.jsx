@@ -139,13 +139,17 @@ function Profile() {
         setUploadStatus("Upload failed: " + msg);
         alert("Upload failed: " + msg);
     }
-  };
+  } ; 
+
+  const handlenext = ()=>{
+    navigate("/AssetDetails");
+  }
 
   if (!user) return <p>Loading user details...</p>;
 
   return (
     <div style={{ maxWidth: "400px", margin: "auto", padding: "1rem" }}>
-      <h2>User Profile</h2>
+      <h2>Welcome User</h2>
 
       {editMode ? (
         <>
@@ -187,7 +191,7 @@ function Profile() {
           <button onClick={handleDelete} style={{ color: "red" }}>
             Delete Account
           </button>
-
+          <button onClick={handlenext}>Show Data</button>
           <hr />
           <h3>Import Excel Data</h3>
           <input

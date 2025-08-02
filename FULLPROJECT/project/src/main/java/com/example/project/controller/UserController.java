@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.project.dto.AssetDataDTO;
 import com.example.project.dto.UpdateUserDTO;
 import com.example.project.dto.userDTO;
 import com.example.project.model.AssetData;
@@ -141,13 +142,58 @@ public class UserController {
 	    @GetMapping("/getAssets")
 	    public List<AssetData> getAssets(@AuthenticationPrincipal UserDetails userDetails) {
 	        if (userDetails == null) {
-	            return null;
-	        }
+	            return null;	        }
 
-	        return service.getAssets();
+	         List<AssetData> asset= service.getAssets();
+	        return asset;
+	        
 	        
 	    }
+	    
+	    @PostMapping("/UpdateAsset")
+	    public ResponseEntity<String> updateAsset(@AuthenticationPrincipal UserDetails userDetails, @RequestBody AssetDataDTO data) {
+	        if (userDetails == null) {
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	        }
 
-	  
+	        try {
+	            service.updateAsset(data.getMobileNumber(), data);
+	            return ResponseEntity.ok("Asset updated successfully.");
+	        } catch (Exception e) {
+	            return ResponseEntity.badRequest().body("Failed to update asset: " + e.getMessage());
+	        }
+	    }
+	
+	    
+	    @PostMapping("/AddAsset")
+	    public ResponseEntity<String> addAsset(@AuthenticationPrincipal UserDetails userDetails, @RequestBody AssetDataDTO data) {
+	        if (userDetails == null) {
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	        }
+
+	        try {
+	        	service.AddAsset(data);
+	            return ResponseEntity.ok("Asset added successfully.");
+	        } catch (Exception e) {
+	            return ResponseEntity.badRequest().body("Failed to add asset: " + e.getMessage());
+	        }
+	    }
+	    
+	    @DeleteMapping("/deleteAsset")
+	    public ResponseEntity<String> deleteAsset(@AuthenticationPrincipal UserDetails userDetails, @RequestBody String mobno) {
+	        if (userDetails == null) {
+	        	//System.out.println("userdetails");
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	        }
+
+	        try {
+	        	//System.out.println("in try controller");
+	            service.deleteAsset(mobno);
+	            return ResponseEntity.ok("Asset deleted successfully.");
+	        } catch (Exception e) {
+	            return ResponseEntity.badRequest().body("Failed to delete asset: " + e.getMessage());
+	        }
+			
+	    }
 	
 }
