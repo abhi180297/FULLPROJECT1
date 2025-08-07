@@ -6,8 +6,13 @@ import "./VctypeDetails.css";
 function VctypeDetails() {
   const { vctype } = useParams();
   const [data, setData] = useState(null);
-  const [status, setStatus] = useState("");
+  const [rvManagerStatus, setRvManagerStatus] = useState("");
+  const [bcManagerStatus, setBcManagerStatus] = useState("");
+  const [comments, setComments] = useState({});
   const [message, setMessage] = useState("");
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const role = user?.roles?.[0]?.roleName?.toUpperCase();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,7 +29,9 @@ function VctypeDetails() {
 
         if (response.data) {
           setData(response.data);
-          setStatus(response.data.status);
+          setRvManagerStatus(response.data.rvManagerStatus || "");
+          setBcManagerStatus(response.data.bcManagerStatus || "");
+          setComments(response.data.comments || {});
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -34,14 +41,58 @@ function VctypeDetails() {
     fetchData();
   }, [vctype]);
 
-  const handleStatusSave = async () => {
-    try {
-      const baseURL = process.env.REACT_APP_API_BASE_URL;
-      const token = localStorage.getItem("token");
+  const updateStatus = async (field, value) => {
+    const baseURL = process.env.REACT_APP_API_BASE_URL;
+    const token = localStorage.getItem("token");
 
-      await axios.put(
-        `${baseURL}/assets/update-status/${vctype}`,
-        { status },
+    const payload = {
+      [field]: value,
+    };
+
+    try {
+      await axios.post(`${baseURL}/assets/update-status/${vctype}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const rv = field === "rvManagerStatus" ? value : rvManagerStatus;
+      const bc = field === "bcManagerStatus" ? value : bcManagerStatus;
+
+      if (rv && bc && rv === bc) {
+        await axios.post(
+          `${baseURL}/assets/update-excel-status/${vctype}`,
+          { excelStatus: rv },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setMessage("✅ Excel status updated (both approvals matched).");
+      } else {
+        setMessage("✅ Status updated.");
+      }
+    } catch (error) {
+      console.error("Status update failed:", error);
+      setMessage("❌ Status update failed.");
+    }
+  };
+
+  const handleCommentSave = async () => {
+    const baseURL = process.env.REACT_APP_API_BASE_URL;
+    const token = localStorage.getItem("token");
+    const updatedComments = {
+      ...comments,
+      [role]: comments[role] || "",
+    };
+
+    try {
+      await axios.post(
+        `${baseURL}/assets/update-comment/${vctype}`,
+        { comments: updatedComments },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -49,11 +100,10 @@ function VctypeDetails() {
           },
         }
       );
-
-      setMessage("Status updated successfully.");
+      setMessage("Comment saved successfully.");
     } catch (error) {
-      console.error("Failed to update status:", error);
-      setMessage("Failed to update status.");
+      console.error("Failed to save comment:", error);
+      setMessage("Failed to save comment.");
     }
   };
 
@@ -67,17 +117,17 @@ function VctypeDetails() {
     return imageBaseURL + filename.split("/").pop();
   };
 
-  // Dynamic Back Button Path
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const role = user?.roles?.[0]?.roleName?.toUpperCase();
   const roleRoutes = {
-    Superadmin: "/superadmin-dashboard",
+    SUPERADMIN: "/superadmin-dashboard",
     ADMIN: "/admin-dashboard",
-    JRMANAGER: "/manager1-dashboard",
-    SRMANAGER: "/manager2-dashboard",
+    JRMANAGER: "/RVManager-dashboard",
+    SRMANAGER: "/BCManager-dashboard",
+    RVMANAGER: "/RVManager-dashboard",
+    BCMANAGER: "/BCManager-dashboard",
     SALESPERSON: "/sales-dashboard",
     VENDOR: "/vendor-dashboard",
   };
+
   const backPath = roleRoutes[role] || "/";
 
   return (
@@ -99,49 +149,84 @@ function VctypeDetails() {
         </div>
 
         <div className="approval-card">
-          <h4>Manager1 Approval</h4>
-          <p>Status: {status}</p>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option>Open</option>
-            <option>In Progress</option>
-            <option>Completed</option>
-          </select>
-          <button onClick={handleStatusSave}>Save</button>
-          {message && <p className="status-message">{message}</p>}
+          <h4>RVManager Approval</h4>
+          {role === "RVMANAGER" ? (
+            <select
+              value={rvManagerStatus}
+              onChange={(e) => {
+                const newStatus = e.target.value;
+                setRvManagerStatus(newStatus);
+                updateStatus("rvManagerStatus", newStatus);
+              }}
+            >
+              <option value="">-- Select Status --</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Complete">Complete</option>
+            </select>
+          ) : (
+            <p>Status: {rvManagerStatus || "N/A"}</p>
+          )}
         </div>
 
         <div className="approval-card">
-          <h4>Manager2 Approval</h4>
-          <p>Status: {data.status}</p>
+          <h4>BCManager Approval</h4>
+          {role === "BCMANAGER" ? (
+            <select
+              value={bcManagerStatus}
+              onChange={(e) => {
+                const newStatus = e.target.value;
+                setBcManagerStatus(newStatus);
+                updateStatus("bcManagerStatus", newStatus);
+              }}
+            >
+              <option value="">-- Select Status --</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Complete">Complete</option>
+            </select>
+          ) : (
+            <p>Status: {bcManagerStatus || "N/A"}</p>
+          )}
         </div>
       </div>
 
       <div className="image-grid">
-        <div className="image-card">
-          <h4>Owner</h4>
-          <img src={getImageUrl(data.outletOwnerPic)} alt="Owner"
-            onError={(e) => e.target.src = placeholder} />
-        </div>
-        <div className="image-card">
-          <h4>Identity</h4>
-          <img src={getImageUrl(data.outletOwnerIdsPics)} alt="Identity"
-            onError={(e) => e.target.src = placeholder} />
-        </div>
-        <div className="image-card">
-          <h4>Compliance</h4>
-          <img src={getImageUrl(data.assetPics)} alt="Compliance"
-            onError={(e) => e.target.src = placeholder} />
-        </div>
-        <div className="image-card">
-          <h4>Store</h4>
-          <img src={getImageUrl(data.outletExteriorsPhoto)} alt="Store"
-            onError={(e) => e.target.src = placeholder} />
-        </div>
-        <div className="image-card">
-          <h4>Serial No</h4>
-          <img src={getImageUrl(data.serialNoPic)} alt="Serial Number"
-            onError={(e) => e.target.src = placeholder} />
-        </div>
+        {["outletOwnerPic", "outletOwnerIdsPics", "assetPics", "outletExteriorsPhoto", "serialNoPic"].map((field, index) => (
+          <div key={index} className="image-card">
+            <h4>{field.replace(/([A-Z])/g, " $1")}</h4>
+            <img src={getImageUrl(data[field])} alt={field} onError={(e) => e.target.src = placeholder} />
+          </div>
+        ))}
+      </div>
+
+      {/* Comment Section */}
+      <div className="comment-box">
+        <h4>Comments</h4>
+        {Object.entries({ ADMIN: "Admin", SUPERADMIN: "SuperAdmin", RVMANAGER: "RVManager", BCMANAGER: "BCManager" }).map(([key, label]) => (
+          <div key={key} style={{ marginBottom: "15px" }}>
+            <strong>{label}:</strong>
+            {role === key ? (
+              <>
+                <textarea
+                  value={comments[key] || ""}
+                  onChange={(e) => setComments({ ...comments, [key]: e.target.value })}
+                  rows={3}
+                  style={{ width: "100%", padding: "5px" }}
+                />
+              </>
+            ) : (
+              <p style={{ whiteSpace: "pre-wrap" }}>{comments[key] || "No comment."}</p>
+            )}
+          </div>
+        ))}
+
+        {role in comments && (
+          <button onClick={handleCommentSave} style={{ marginTop: "10px" }}>
+            Save Comment
+          </button>
+        )}
+        {message && <p style={{ color: "green" }}>{message}</p>}
       </div>
     </div>
   );

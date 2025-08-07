@@ -123,7 +123,7 @@ function Vendordashboard() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         {logoUrl && <img src={logoUrl} alt="Logo" className="dashboard-logo" />}
-        <span className="welcome-text">Welcome - admin.</span>
+        <span className="welcome-text">Welcome - Vendor</span>
 
         <div className="profile-section">
           <span className="profile-icon" onClick={toggleLogout}>👤</span>

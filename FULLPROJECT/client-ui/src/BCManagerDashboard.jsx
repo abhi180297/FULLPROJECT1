@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+  PieChart, Pie, Cell
+} from 'recharts';
 import './SuperAdminDashboard.css';
 
-function Manager1Dashboard() {
+function BCManagerDashboard() {
   const [activeTab, setActiveTab] = useState(0);
-  const [assets, setAssets] = useState({
-    open: [],
-    inProgress: [],
-    completed: [],
-    closed: []
-  });
+  const [assets, setAssets] = useState({ open: [], inProgress: [], completed: [] });
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(50);
   const [showLogout, setShowLogout] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [logoUrl] = useState("/logo.png");
+  const [roleName, setRoleName] = useState("");
+  const [firstName, setFirstName] = useState("");
 
   const navigate = useNavigate();
-  const rowsPerPage = 10;
 
   const tabs = [
     "Consumer/ Vendor Analysis",
@@ -28,29 +29,43 @@ function Manager1Dashboard() {
   ];
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (!token || !user) {
+      setError("Missing session data");
+      return;
+    }
+
+    try {
+      const userInfo = JSON.parse(user);
+      setRoleName(userInfo?.roles?.[0]?.roleName || "User");
+      setFirstName(userInfo?.firstName || "User");
+    } catch (e) {
+      console.error("Failed to parse user data", e);
+      setError("Invalid session");
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchAllAssets = async () => {
       const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Missing token");
-        return;
-      }
+      if (!token) return;
 
       const baseURL = process.env.REACT_APP_API_BASE_URL || "";
       const headers = { Authorization: `Bearer ${token}` };
 
       try {
-        const [openRes, inProgressRes, completedRes, closedRes] = await Promise.all([
+        const [openRes, inProgressRes, completedRes] = await Promise.all([
           axios.get(`${baseURL}/assets/GetAllDetailsByOpenStatus`, { headers }),
           axios.get(`${baseURL}/assets/GetAllDetailsByInProgressStatus`, { headers }),
           axios.get(`${baseURL}/assets/GetAllDetailsByCompletedStatus`, { headers }),
-          axios.get(`${baseURL}/assets/GetAllDetailsByClosedStatus`, { headers })
         ]);
 
         setAssets({
           open: openRes.data || [],
           inProgress: inProgressRes.data || [],
-          completed: completedRes.data || [],
-          closed: closedRes.data || []
+          completed: completedRes.data || []
         });
       } catch (err) {
         console.error("API Error", err);
@@ -65,8 +80,7 @@ function Manager1Dashboard() {
     setCurrentPage(1);
   }, [activeTab, searchTerm]);
 
-  const toggleLogout = () => setShowLogout((prev) => !prev);
-
+  const toggleLogout = () => setShowLogout(prev => !prev);
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
@@ -80,26 +94,18 @@ function Manager1Dashboard() {
 
   const getTabAssets = () => {
     switch (activeTab) {
-      case 0:
-        return [...assets.open, ...assets.inProgress, ...assets.completed, ...assets.closed];
-      case 1:
-        return assets.open;
-      case 2:
-        return assets.inProgress;
-      case 3:
-        return assets.completed;
-      case 4:
-        return assets.closed;
-      default:
-        return [];
+      case 0: return [...assets.open, ...assets.inProgress, ...assets.completed];
+      case 1: return assets.open;
+      case 2: return assets.inProgress;
+      case 3: return assets.completed;
+      default: return [];
     }
   };
 
-  const filteredAssets = getTabAssets().filter((item) => {
+  const filteredAssets = getTabAssets().filter(item => {
     if (searchTerm.trim() === "") return true;
-    const outletKey = Object.keys(item).find((key) => key.toLowerCase() === "outletname");
-    if (!outletKey) return false;
-    return String(item[outletKey]).toLowerCase().includes(searchTerm.toLowerCase());
+    const outletKey = Object.keys(item).find(key => key.toLowerCase() === "outletname");
+    return outletKey && String(item[outletKey]).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const tabCounts = [
@@ -116,6 +122,13 @@ function Manager1Dashboard() {
 
   const totalPages = Math.ceil(filteredAssets.length / rowsPerPage);
 
+  const pieColors = ["#8884d8", "#82ca9d", "#ffc658"];
+  const chartData = [
+    { name: "Open", value: assets.open.length },
+    { name: "In Progress", value: assets.inProgress.length },
+    { name: "Completed", value: assets.completed.length }
+  ];
+
   return (
     <div className="superadmin-dashboard">
       <div className="dashboard-header">
@@ -128,19 +141,17 @@ function Manager1Dashboard() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         {logoUrl && <img src={logoUrl} alt="Logo" className="dashboard-logo" />}
-        <span className="welcome-text">Welcome - manager1.</span>
+        <span className="welcome-text">Welcome - {firstName} ({roleName})</span>
 
         <div className="profile-section">
           <span className="profile-icon" onClick={toggleLogout}>👤</span>
           {showLogout && (
-            <div className="logout-dropdown" onClick={handleLogout}>
-              Logout
-            </div>
+            <div className="logout-dropdown" onClick={handleLogout}>Logout</div>
           )}
         </div>
       </div>
 
-      <h1 className="dashboard-title">Manager 1, HI</h1>
+      <h1 className="dashboard-title">{firstName}, HI</h1>
 
       <div className="dashboard-tabs custom-tabs tab-scroll">
         {tabs.map((tab, index) => (
@@ -169,8 +180,48 @@ function Manager1Dashboard() {
 
         <h2 className="tab-title">{tabs[activeTab]}</h2>
 
-        {error && <p className="error-text">Error: {error}</p>}
-        {paginatedAssets && paginatedAssets.length > 0 && paginatedAssets[0] ? (
+        {activeTab === 0 && (
+          <div className="charts-container" style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", marginTop: "1rem" }}>
+            <div style={{ width: "100%", maxWidth: "500px" }}>
+              <h3 style={{ textAlign: "center" }}>Bar Chart - Asset Status</h3>
+              <BarChart width={500} height={300} data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={`bar-cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </div>
+
+            <div style={{ width: "100%", maxWidth: "400px" }}>
+              <h3 style={{ textAlign: "center" }}>Pie Chart - Asset Status</h3>
+              <PieChart width={400} height={300}>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </div>
+          </div>
+        )}
+
+        {activeTab !== 0 && paginatedAssets && paginatedAssets.length > 0 && paginatedAssets[0] ? (
           <div className="table-container">
             <table className="dashboard-table">
               <thead>
@@ -188,17 +239,11 @@ function Manager1Dashboard() {
                     {Object.entries(item).map(([key, value], i) => (
                       <td key={i}>
                         {key.toLowerCase() === "vctype" ? (
-                          <Link
-                            to={`/vctype-details/${encodeURIComponent(value)}`}
-                            style={{ color: "#007bff", textDecoration: "underline" }}
-                          >
+                          <Link to={`/vctype-details/${encodeURIComponent(value)}`} style={{ color: "#007bff", textDecoration: "underline" }}>
                             {value}
                           </Link>
                         ) : key.toLowerCase() === "batch" ? (
-                          <Link
-                            to={`/ProductDetails`}
-                            style={{ color: "#28a745", textDecoration: "underline" }}
-                          >
+                          <Link to={`/ProductDetails`} style={{ color: "#28a745", textDecoration: "underline" }}>
                             {value}
                           </Link>
                         ) : (
@@ -212,31 +257,27 @@ function Manager1Dashboard() {
             </table>
 
             <div className="pagination" style={{ marginTop: "1.5rem" }}>
-              <button
-                className="pagination-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              >
-                Prev
-              </button>
-              <span className="pagination-info">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                className="pagination-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              >
-                Next
-              </button>
+              <button className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}>Prev</button>
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`pagination-btn-number ${page === currentPage ? "active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>Next</button>
             </div>
           </div>
         ) : (
-          !error && <p className="no-data-text">No data found for this tab.</p>
+          activeTab !== 0 && !error && <p className="no-data-text">No data found for this tab.</p>
         )}
       </div>
     </div>
   );
 }
 
-export default Manager1Dashboard;
+export default BCManagerDashboard;

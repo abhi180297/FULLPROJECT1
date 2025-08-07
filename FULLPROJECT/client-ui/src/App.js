@@ -8,8 +8,8 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import AdminDashboard from "./Admin_Dashboard";
 import ProductDetails from "./ProductDetails"; 
 import VctypeDetails from "./VctypeDetail.jsx";
-import Manager1Dashboard from "./Manager1Dashboard";
-import Manager2Dashboard from "./Manager2Dashboard";
+import RVManagerDashboard from "./RVManagerDashboard";
+import BCManagerDashboard from "./BCManagerDashboard";
 import SalesPersonDashboard from "./SalesPersonDashboard";
 import VendorDashboard from "./VendorDashboard";
 
@@ -27,8 +27,8 @@ function App() {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/vctype-details/:vctype" element={<VctypeDetails />} />
         <Route path="/assetdetails/:id" element={<AssetDetails />} />
-        <Route path="/manager1-dashboard" element={<Manager1Dashboard />} />
-        <Route path="/manager2-dashboard" element={<Manager2Dashboard />} />
+        <Route path="/RVManager-dashboard" element={<RVManagerDashboard />} />
+        <Route path="/BCManager-dashboard" element={<BCManagerDashboard />} />
         <Route path="/salesperson-dashboard" element={<SalesPersonDashboard />} />
         <Route path="/vendor-dashboard" element={<VendorDashboard />} />
 

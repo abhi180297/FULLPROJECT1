@@ -25,11 +25,11 @@ function Login() {
         case "ADMIN":
           navigate("/admin-dashboard");
           break;
-        case "JRMANAGER":
-          navigate("/manager1-dashboard");
+        case "RVMANAGER":
+          navigate("/RVManager-dashboard");
           break;
-        case "SRMANAGER":
-          navigate("/manager2-dashboard");
+        case "BCMANAGER":
+          navigate("/BCManager-dashboard");
           break;
         case "SALESPERSON":
           navigate("/salesPerson-dashboard");
@@ -78,11 +78,11 @@ function Login() {
           case "ADMIN":
             navigate("/admin-dashboard");
             break;
-          case "JRMANAGER":
-            navigate("/manager1-dashboard");
+          case "RVMANAGER":
+            navigate("/RVManager-dashboard");
             break;
-          case "SRMANAGER":
-            navigate("/manager2-dashboard");
+          case "BCMANAGER":
+            navigate("/BCManager-dashboard");
             break;
           case "SALESPERSON":
             navigate("/salesPerson-dashboard");
